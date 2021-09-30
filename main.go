@@ -4,11 +4,14 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+
+	"github.com/antunesgabriel/crud/configs"
 )
 
 var resources = template.Must(template.ParseGlob("templates/*.html"))
 
-type Products struct {
+type Product struct {
+	Id          int
 	Name        string
 	Description string
 	Price       float64
@@ -24,9 +27,36 @@ func main() {
 }
 
 func index(wr http.ResponseWriter, request *http.Request) {
-	products := []Products{
-		{"SSH", "SSH 480gb", 239.65, 10},
-		{"Samsung Smart TV 55", "UHD 4K 55AU7700, Processador Crystal 4K", 2999.00, 67},
+
+	database := configs.ConnectDatabase()
+	defer database.Close()
+
+	result, err := database.Query("SELECT * from products")
+
+	if err != nil {
+		log.Fatalln("Error on query products", err)
 	}
+
+	product := Product{}
+	products := []Product{}
+
+	for result.Next() {
+		var id, amount int
+		var name, description string
+		var price float64
+
+		if err := result.Scan(&id, &name, &description, &price, &amount); err != nil {
+			log.Fatalln("Error on scan row", err)
+		}
+
+		product.Id = id
+		product.Name = name
+		product.Description = description
+		product.Price = price
+		product.Amount = amount
+
+		products = append(products, product)
+	}
+
 	resources.ExecuteTemplate(wr, "Index", products)
 }

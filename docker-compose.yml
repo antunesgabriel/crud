@@ -1,0 +1,36 @@
+version: '3.7'
+services:
+    postgres:
+        image: postgres:10.5
+        environment:
+          - POSTGRES_USER=postgres
+          - POSTGRES_PASSWORD=postgres
+          - APP_DB_NAME=go_crud
+        logging:
+          options:
+            max-size: 10m
+            max-file: "3"
+        ports:
+          - '5432:5432'
+        volumes: 
+          - ./docker/data/pg:/var/lib/postgresql/data
+          - ./docker/sql/10-init.sql:/docker-entrypoint-initdb.d/10-init.sql
+        networks:
+          - db-network
+
+    pgadmin:
+        image: dpage/pgadmin4
+        environment:
+          PGADMIN_DEFAULT_EMAIL: pgadmin4@pgadmin.org
+          PGADMIN_DEFAULT_PASSWORD: admin
+          PGADMIN_CONFIG_SERVER_MODE: 'False'
+        ports:
+          - '5050:80'
+        networks:
+          - db-network
+        depends_on:
+          - postgres
+
+networks:
+  db-network:
+    driver: bridge
